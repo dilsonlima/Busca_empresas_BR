@@ -93,6 +93,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		"Municipio",
 		"UF",
 		"CEP",
+		"DDD", 
 		"Telefone",
 		"Email",
 	}); err != nil {
@@ -128,7 +129,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 
 func processRecords(records [][]string, outputCSV *csv.Writer) {
 	for _, record := range records {
-		if len(record) < 4 {
+		if len(record) < 28 {
 			continue
 		}
 
@@ -161,37 +162,33 @@ func processRecords(records [][]string, outputCSV *csv.Writer) {
 
 		// Verificar capital social
 		if empresa.CapitalSocial > 50000 {
-			// Extrair telefone e email
-			telefone := ""
-			email := ""
-			if len(record) > 22 {
-				telefone = strings.Trim(record[22], `" `)
-			}
-			if len(record) > 26 {
-				email = strings.Trim(record[26], `" `)
-			}
+			// Extrair telefone e email do *arquivo CSV de entrada*
+			ddd := strings.Trim(record[21], `" `)   
+            telefone := strings.Trim(record[22], `" `) // Índice para o telefone no seu CSV
+            email := strings.Trim(record[27], `" `)   // **Corrigido: Índice para o e-mail no seu CSV**
 
-			// Escrever no arquivo com mutex
-			fileMutex.Lock()
-			if err := outputCSV.Write([]string{
-				cnpj,
-				empresa.RazaoSocial,
-				empresa.NomeFantasia,
-				strconv.FormatFloat(empresa.CapitalSocial, 'f', 2, 64),
-				empresa.Logradouro,
-				empresa.Municipio,
-				empresa.UF,
-				empresa.Cep,
-				telefone,
-				email,
-			}); err != nil {
-				log.Printf("Erro ao escrever no arquivo de saída: %v", err)
-			}
-			outputCSV.Flush()
-			fileMutex.Unlock()
-		}
+            // Escrever no arquivo com mutex
+            fileMutex.Lock()
+            if err := outputCSV.Write([]string{
+                cnpj,
+                empresa.RazaoSocial,
+                empresa.NomeFantasia,
+                strconv.FormatFloat(empresa.CapitalSocial, 'f', 2, 64),
+                empresa.Logradouro,
+                empresa.Municipio,
+                empresa.UF,
+                empresa.Cep,
+				ddd,  
+                telefone, 
+                email,    
+            }); err != nil {
+                log.Printf("Erro ao escrever no arquivo de saída: %v", err)
+            }
+            outputCSV.Flush()
+            fileMutex.Unlock()
+        }
 
-		time.Sleep(1 * time.Second)
+        time.Sleep(1 * time.Second)
 	}
 }
 
